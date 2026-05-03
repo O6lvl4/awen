@@ -1,4 +1,4 @@
-// cmd_add — `teichaku add <note-slug>`
+// cmd_add — `awen add <note-slug>`
 //
 // Interactive: prompt for question, then answer (multi-line, blank line ends).
 // Saves a new card under <vault>/.srs/<note-slug>/<id>.json with
@@ -29,7 +29,7 @@ effect fn read_lines_until_blank(acc: String) -> String = {
 }
 
 effect fn run(note: String) -> Result[String, String] = {
-  io.print("teichaku add — note: ${note}\n")
+  io.print("awen add — note: ${note}\n")
   io.print("\n")
   let q = read_question("Q: ")
   if q == "" then err("question cannot be empty")

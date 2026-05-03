@@ -1,12 +1,14 @@
-# teichaku
+# awen
 
-**定着** — knowledge retention CLI for your markdown vault.
+**Awen** — knowledge retention CLI for your markdown vault.
+
+Named for the Welsh *awen*, the divine inspiration that flows from Cerridwen's cauldron — the knowledge that has settled into you so deeply it can pour back out. Same Celtic family as **[Ogma](https://en.wikipedia.org/wiki/Ogma)**, the god of language who invented the Ogham alphabet.
 
 Spaced repetition (SM-2) for the notes you actually care about, written in [Almide](https://github.com/almide/almide). Cards live as JSON next to your vault so review history rides along in git.
 
 ## Why
 
-You're building a knowledge base. Writing the notes is half the job; getting the content to *stick* is the other half. teichaku is the second half — a CLI that asks you "do you actually remember this?" on the schedule SM-2 says you should.
+You're building a knowledge base. Writing the notes is half the job; getting the content to *stick* is the other half. awen is the second half — a CLI that asks you "do you actually remember this?" on the schedule SM-2 says you should.
 
 It's a CLI re-implementation of the spaced-repetition core in [MemRE](https://github.com/O6lvl4/memre), without the Go runtime, GUI, or LLM dependency. Just markdown vault + flat JSON + a terminal.
 
@@ -15,8 +17,8 @@ It's a CLI re-implementation of the spaced-repetition core in [MemRE](https://gi
 Requires [Almide](https://github.com/almide/almide).
 
 ```bash
-git clone https://github.com/O6lvl4/teichaku
-cd teichaku
+git clone https://github.com/O6lvl4/awen
+cd awen
 almide run src/main.almd help
 ```
 
@@ -26,13 +28,13 @@ A binary install (`almide build`) will land once `[[bin]]` lands in `almide.toml
 
 ### Configure the vault
 
-teichaku writes cards under `<vault>/.srs/<note-slug>/<card-id>.json`. Point it at your vault:
+awen writes cards under `<vault>/.srs/<note-slug>/<card-id>.json`. Point it at your vault:
 
 ```bash
-export TEICHAKU_VAULT=$HOME/workspace/github.com/O6lvl4/O6lvl4-knowledge/vault
+export AWEN_VAULT=$HOME/workspace/github.com/O6lvl4/O6lvl4-knowledge/vault
 ```
 
-If `TEICHAKU_VAULT` is unset, `./vault` is used.
+If `AWEN_VAULT` is unset, `./vault` is used.
 
 ### Add a card
 
@@ -52,7 +54,7 @@ The card is saved at `<vault>/.srs/agentic-coding/agentic-coding-001.json` with 
 almide run src/main.almd review
 ```
 
-For every card with `due ≤ today`, teichaku shows the question, waits for `Enter`, reveals the answer, and asks for a quality rating:
+For every card with `due ≤ today`, awen shows the question, waits for `Enter`, reveals the answer, and asks for a quality rating:
 
 | Quality | Meaning |
 |---|---|
@@ -100,8 +102,8 @@ JSON is intentionally simple so you can hand-edit, grep, and diff cards in git.
 ## Layout
 
 ```
-teichaku/
-├── almide.toml      package = teichaku
+awen/
+├── almide.toml      package = awen
 └── src/
     ├── main.almd       entry, sub-command dispatch
     ├── srs.almd        pure SM-2 math (apply, initial)
@@ -114,10 +116,14 @@ teichaku/
 
 ## Roadmap
 
-- `teichaku init` — scaffold `<vault>/.srs/` with a `.gitignore` carve-out
-- `teichaku sync` — write `retention`, `last_reviewed`, `card_count` to vault frontmatter
-- `teichaku export` — Anki `.apkg` / CSV
+- `awen init` — scaffold `<vault>/.srs/` with a `.gitignore` carve-out
+- `awen sync` — write `retention`, `last_reviewed`, `card_count` to vault frontmatter
+- `awen export` — Anki `.apkg` / CSV
 - LLM-assisted card extraction (probably via [almai](https://github.com/almide/almai)) — keep manual capture as the primary path
+
+## Name
+
+**Awen** (アウェン): in Welsh and Cornish bardic tradition, the divine breath of inspiration — the *gist* that comes back to you because you've internalised the substance, not just the surface. The 16th-century Welsh dictionary by Iolo Morganwg renders it as "flowing spirit." It's the right word for what spaced repetition aims at: not just "I remember", but "I can produce this from inside me on demand." Same Celtic mythological lineage as **Ogma**.
 
 ## License
 

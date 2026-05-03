@@ -8,9 +8,9 @@ import string
 
 import self.card as card
 
-// Resolve vault path: TEICHAKU_VAULT env > $PWD/vault.
+// Resolve vault path: AWEN_VAULT env > $PWD/vault.
 effect fn vault_path() -> String =
-  match env.get("TEICHAKU_VAULT") {
+  match env.get("AWEN_VAULT") {
     some(p) => p
     none => "./vault"
   }

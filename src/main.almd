@@ -1,12 +1,12 @@
-// teichaku — knowledge retention CLI for your markdown vault.
+// awen — knowledge retention CLI for your markdown vault.
 //
-//   teichaku add <note-slug>     create a new flashcard for vault/<note-slug>.md
-//   teichaku review              review every due card today
-//   teichaku stats [<note>]      retention summary, optionally filtered by note
-//   teichaku help                show this message
+//   awen add <note-slug>     create a new flashcard for vault/<note-slug>.md
+//   awen review              review every due card today
+//   awen stats [<note>]      retention summary, optionally filtered by note
+//   awen help                show this message
 //
 // Storage:    <vault>/.srs/<note-slug>/<card-id>.json (JSON, git-friendly)
-// Vault path: TEICHAKU_VAULT env var, falls back to ./vault
+// Vault path: AWEN_VAULT env var, falls back to ./vault
 
 import env
 import io
@@ -25,14 +25,14 @@ import self.cmd_stats as cmd_stats
 let VERSION = "0.0.1"
 
 effect fn print_help() -> Unit = {
-  io.print("teichaku ${VERSION} — knowledge retention CLI\n\n")
+  io.print("awen ${VERSION} — knowledge retention CLI\n\n")
   io.print("Usage:\n")
-  io.print("  teichaku add <note-slug>    create a new flashcard for a note\n")
-  io.print("  teichaku review             review every due card\n")
-  io.print("  teichaku stats [<note>]     retention summary\n")
-  io.print("  teichaku help               this message\n\n")
+  io.print("  awen add <note-slug>    create a new flashcard for a note\n")
+  io.print("  awen review             review every due card\n")
+  io.print("  awen stats [<note>]     retention summary\n")
+  io.print("  awen help               this message\n\n")
   io.print("Storage: <vault>/.srs/<note>/<id>.json\n")
-  io.print("Vault:   \$TEICHAKU_VAULT or ./vault\n")
+  io.print("Vault:   \$AWEN_VAULT or ./vault\n")
 }
 
 effect fn run() -> Result[Unit, String] = {
@@ -41,7 +41,7 @@ effect fn run() -> Result[Unit, String] = {
   let arg1 = list.get(raw, 1)
   match cmd {
     "add" => match arg1 {
-      none => err("usage: teichaku add <note-slug>")
+      none => err("usage: awen add <note-slug>")
       some(note) => match cmd_add.run(note) {
         err(e) => err(e)
         ok(_) => ok(())
@@ -52,9 +52,9 @@ effect fn run() -> Result[Unit, String] = {
     "help" => { print_help(); ok(()) }
     "-h" => { print_help(); ok(()) }
     "--help" => { print_help(); ok(()) }
-    "version" => { io.print("teichaku ${VERSION}\n"); ok(()) }
-    "--version" => { io.print("teichaku ${VERSION}\n"); ok(()) }
-    _ => err("unknown command: ${cmd}. Try 'teichaku help'.")
+    "version" => { io.print("awen ${VERSION}\n"); ok(()) }
+    "--version" => { io.print("awen ${VERSION}\n"); ok(()) }
+    _ => err("unknown command: ${cmd}. Try 'awen help'.")
   }
 }
 

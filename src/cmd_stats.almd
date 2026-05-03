@@ -1,4 +1,4 @@
-// cmd_stats — `teichaku stats [<note>]`
+// cmd_stats — `awen stats [<note>]`
 //
 // Print a summary: total cards, due today, average ef, by-note breakdown.
 

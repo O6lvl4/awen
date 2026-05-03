@@ -1,4 +1,4 @@
-// cmd_review — `teichaku review`
+// cmd_review — `awen review`
 //
 // Walk through every card whose due ≤ today, show the question, prompt
 // for the answer, reveal, take a quality rating (0..5), update the

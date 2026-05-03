@@ -2,7 +2,7 @@
 //
 // Reference: P. Wozniak, "Optimization of repetition spacing
 // in the practice of learning" (1990). Same formula MemRE uses;
-// reimplemented here so teichaku has no Go dependency.
+// reimplemented here so awen has no Go dependency.
 
 let DEFAULT_EF: Float = 2.5
 let MIN_EF: Float = 1.3
