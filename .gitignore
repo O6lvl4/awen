@@ -1,0 +1,4 @@
+target/
+.almide-cache/
+*.tmp
+.DS_Store

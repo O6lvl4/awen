@@ -1,0 +1,66 @@
+// cmd_review — `teichaku review`
+//
+// Walk through every card whose due ≤ today, show the question, prompt
+// for the answer, reveal, take a quality rating (0..5), update the
+// schedule with SM-2, write the card back.
+
+import io
+import int
+
+import self.card as card
+import self.srs as srs
+import self.store as store
+
+effect fn rate() -> Int = {
+  io.print("Quality 0..5 (0=blackout, 3=correct-with-effort, 5=perfect): ")
+  let line = string.trim(io.read_line())
+  match int.parse(line) {
+    ok(n) =>
+      if n < 0 then 0
+      else if n > 5 then 5
+      else n
+    err(_) => 0
+  }
+}
+
+effect fn review_one(c: card.Card, today: String) -> Result[Unit, String] = {
+  io.print("─────────────────────────────────────\n")
+  io.print("Note:     ${c.note}\n")
+  io.print("Card:     ${c.id}    reps=${int.to_string(c.reps)}    ef=${float.to_fixed(c.ef, 2)}\n")
+  io.print("\nQ: ${c.question}\n")
+  io.print("\n[Enter] to reveal answer ")
+  let _ = io.read_line()
+  io.print("\nA:\n${c.answer}\n\n")
+  let q = rate()
+  let cur_sched = Schedule { ef: c.ef, interval: c.interval, reps: c.reps }
+  let next_sched = srs.apply(cur_sched, q)
+  match card.add_days_iso(today, next_sched.interval) {
+    err(e) => err(e)
+    ok(next_due) => {
+      let r = Review { date: today, quality: q }
+      let updated = card.append_review(card.with_schedule(c, next_sched, next_due), r)
+      let _ = store.save(updated)!
+      io.print("  → next review: ${next_due} (in ${int.to_string(next_sched.interval)} day(s))\n\n")
+      ok(())
+    }
+  }
+}
+
+effect fn run() -> Result[Unit, String] = {
+  let today = card.today_iso()
+  let due = store.list_due_cards(today)!
+  if list.is_empty(due) then {
+    io.print("✓ No cards due today.\n")
+    ok(())
+  } else {
+    io.print("Reviewing ${int.to_string(list.len(due))} card(s)...\n\n")
+    for c in due {
+      match review_one(c, today) {
+        err(e) => io.print("  error: ${e}\n")
+        ok(_) => ()
+      }
+    }
+    io.print("Done.\n")
+    ok(())
+  }
+}

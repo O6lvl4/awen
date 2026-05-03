@@ -1,0 +1,65 @@
+// cmd_stats — `teichaku stats [<note>]`
+//
+// Print a summary: total cards, due today, average ef, by-note breakdown.
+
+import io
+import int
+import list
+
+import self.card as card
+import self.store as store
+
+fn avg_ef(cards: List[card.Card]) -> Float = {
+  let n = list.len(cards)
+  if n == 0 then 0.0
+  else {
+    let total = list.fold(cards, 0.0, (acc, c) => acc + c.ef)
+    total / int.to_float(n)
+  }
+}
+
+fn count_due(cards: List[card.Card], today: String) -> Int =
+  list.count(cards, (c) => card.is_due(c, today))
+
+effect fn run(filter: Option[String]) -> Result[Unit, String] = {
+  let today = card.today_iso()
+  let all = store.list_all_cards()!
+  let cards = match filter {
+    some(n) => list.filter(all, (c) => c.note == n)
+    none => all
+  }
+  let total = list.len(cards)
+  let due = count_due(cards, today)
+  let avg = avg_ef(cards)
+
+  io.print("─────────────────────────────────────\n")
+  match filter {
+    some(n) => io.print("Note:        ${n}\n")
+    none => io.print("Note:        (all)\n")
+  }
+  io.print("Today:       ${today}\n")
+  io.print("Total cards: ${int.to_string(total)}\n")
+  io.print("Due now:     ${int.to_string(due)}\n")
+  io.print("Avg EF:      ${float.to_fixed(avg, 2)}\n")
+
+  match filter {
+    some(_) => ()
+    none => {
+      io.print("\nBy note:\n")
+      let notes = match store.list_notes() {
+        ok(ns) => ns
+        err(_) => []
+      }
+      for n in notes {
+        let cs = match store.list_cards_for_note(n) {
+          ok(xs) => xs
+          err(_) => []
+        }
+        let n_total = list.len(cs)
+        let n_due = count_due(cs, today)
+        io.print("  ${n}: ${int.to_string(n_total)} card(s), ${int.to_string(n_due)} due\n")
+      }
+    }
+  }
+  ok(())
+}

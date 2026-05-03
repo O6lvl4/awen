@@ -1,0 +1,6 @@
+[package]
+name = "teichaku"
+version = "0.0.1"
+description = "定着 — knowledge retention CLI built around your markdown vault. SM-2 spaced repetition, written in Almide."
+
+[dependencies]

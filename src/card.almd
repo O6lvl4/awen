@@ -1,0 +1,125 @@
+// card — Card entity + JSON serialization.
+//
+// One JSON file per card under <vault>/.srs/<note-slug>/<card-id>.json
+// so the vault stays the single source of truth and review history
+// rides along in git.
+
+import json
+import datetime
+
+import self.srs as srs
+
+type Review = {
+  date: String,   // ISO date "YYYY-MM-DD"
+  quality: Int,   // 0..5
+}
+
+type Card = {
+  id: String,             // <note-slug>-<seq>
+  note: String,           // slug of the source note
+  question: String,
+  answer: String,
+  ef: Float,
+  interval: Int,          // days
+  reps: Int,
+  due: String,            // ISO date
+  created: String,        // ISO date
+  history: List[Review],
+}
+
+fn schedule_of(c: Card) -> srs.Schedule =
+  Schedule { ef: c.ef, interval: c.interval, reps: c.reps }
+
+fn with_schedule(c: Card, s: srs.Schedule, due: String) -> Card =
+  Card {
+    id: c.id,
+    note: c.note,
+    question: c.question,
+    answer: c.answer,
+    ef: s.ef,
+    interval: s.interval,
+    reps: s.reps,
+    due: due,
+    created: c.created,
+    history: c.history,
+  }
+
+fn append_review(c: Card, r: Review) -> Card =
+  Card {
+    id: c.id,
+    note: c.note,
+    question: c.question,
+    answer: c.answer,
+    ef: c.ef,
+    interval: c.interval,
+    reps: c.reps,
+    due: c.due,
+    created: c.created,
+    history: c.history + [r],
+  }
+
+fn review_to_value(r: Review) -> Value =
+  json.object([
+    ("date", json.from_string(r.date)),
+    ("quality", json.from_int(r.quality)),
+  ])
+
+fn value_to_review(v: Value) -> Review =
+  Review {
+    date: json.get_string(v, "date") |> option.unwrap_or(""),
+    quality: json.get_int(v, "quality") |> option.unwrap_or(0),
+  }
+
+fn to_value(c: Card) -> Value =
+  json.object([
+    ("id", json.from_string(c.id)),
+    ("note", json.from_string(c.note)),
+    ("question", json.from_string(c.question)),
+    ("answer", json.from_string(c.answer)),
+    ("ef", json.from_float(c.ef)),
+    ("interval", json.from_int(c.interval)),
+    ("reps", json.from_int(c.reps)),
+    ("due", json.from_string(c.due)),
+    ("created", json.from_string(c.created)),
+    ("history", json.array(list.map(c.history, (r) => review_to_value(r)))),
+  ])
+
+fn from_value(v: Value) -> Card = {
+  let history_arr = json.get_array(v, "history") |> option.unwrap_or([])
+  Card {
+    id: json.get_string(v, "id") |> option.unwrap_or(""),
+    note: json.get_string(v, "note") |> option.unwrap_or(""),
+    question: json.get_string(v, "question") |> option.unwrap_or(""),
+    answer: json.get_string(v, "answer") |> option.unwrap_or(""),
+    ef: json.get_float(v, "ef") |> option.unwrap_or(2.5),
+    interval: json.get_int(v, "interval") |> option.unwrap_or(0),
+    reps: json.get_int(v, "reps") |> option.unwrap_or(0),
+    due: json.get_string(v, "due") |> option.unwrap_or(""),
+    created: json.get_string(v, "created") |> option.unwrap_or(""),
+    history: list.map(history_arr, (rv) => value_to_review(rv)),
+  }
+}
+
+fn to_json_string(c: Card) -> String = json.stringify_pretty(to_value(c))
+
+fn from_json_string(s: String) -> Result[Card, String] =
+  match json.parse(s) {
+    err(e) => err(e)
+    ok(v) => ok(from_value(v))
+  }
+
+// ── Date helpers ──
+
+fn today_iso() -> String = datetime.format(datetime.now(), "YYYY-MM-DD")
+
+fn add_days_iso(iso: String, days: Int) -> Result[String, String] =
+  match datetime.parse_iso(iso) {
+    err(e) => err(e)
+    ok(ts) => ok(datetime.format(datetime.add_days(ts, days), "YYYY-MM-DD"))
+  }
+
+fn is_due(c: Card, today: String) -> Bool =
+  match (datetime.parse_iso(c.due), datetime.parse_iso(today)) {
+    (ok(d), ok(t)) => d <= t
+    _ => false
+  }

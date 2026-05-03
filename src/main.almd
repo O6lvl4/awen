@@ -1,0 +1,65 @@
+// teichaku — knowledge retention CLI for your markdown vault.
+//
+//   teichaku add <note-slug>     create a new flashcard for vault/<note-slug>.md
+//   teichaku review              review every due card today
+//   teichaku stats [<note>]      retention summary, optionally filtered by note
+//   teichaku help                show this message
+//
+// Storage:    <vault>/.srs/<note-slug>/<card-id>.json (JSON, git-friendly)
+// Vault path: TEICHAKU_VAULT env var, falls back to ./vault
+
+import env
+import io
+import list
+
+import self.cmd_add as cmd_add
+import self.cmd_review as cmd_review
+import self.cmd_stats as cmd_stats
+
+// args.option_or has a codegen bug in this Almide version, so we
+// inline positional access from env.args() instead of importing args.
+//
+// env.args() includes the program name as element 0; positional 0
+// is element 1.
+
+let VERSION = "0.0.1"
+
+effect fn print_help() -> Unit = {
+  io.print("teichaku ${VERSION} — knowledge retention CLI\n\n")
+  io.print("Usage:\n")
+  io.print("  teichaku add <note-slug>    create a new flashcard for a note\n")
+  io.print("  teichaku review             review every due card\n")
+  io.print("  teichaku stats [<note>]     retention summary\n")
+  io.print("  teichaku help               this message\n\n")
+  io.print("Storage: <vault>/.srs/<note>/<id>.json\n")
+  io.print("Vault:   \$TEICHAKU_VAULT or ./vault\n")
+}
+
+effect fn run() -> Result[Unit, String] = {
+  let raw = env.args()
+  let cmd = list.get(raw, 0) |> option.unwrap_or("help")
+  let arg1 = list.get(raw, 1)
+  match cmd {
+    "add" => match arg1 {
+      none => err("usage: teichaku add <note-slug>")
+      some(note) => match cmd_add.run(note) {
+        err(e) => err(e)
+        ok(_) => ok(())
+      }
+    }
+    "review" => cmd_review.run()
+    "stats" => cmd_stats.run(arg1)
+    "help" => { print_help(); ok(()) }
+    "-h" => { print_help(); ok(()) }
+    "--help" => { print_help(); ok(()) }
+    "version" => { io.print("teichaku ${VERSION}\n"); ok(()) }
+    "--version" => { io.print("teichaku ${VERSION}\n"); ok(()) }
+    _ => err("unknown command: ${cmd}. Try 'teichaku help'.")
+  }
+}
+
+effect fn main() -> Unit =
+  match run() {
+    ok(_) => ()
+    err(e) => io.print("error: ${e}\n")
+  }

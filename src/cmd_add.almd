@@ -1,0 +1,63 @@
+// cmd_add — `teichaku add <note-slug>`
+//
+// Interactive: prompt for question, then answer (multi-line, blank line ends).
+// Saves a new card under <vault>/.srs/<note-slug>/<id>.json with
+// the initial schedule (interval=1, due=today).
+
+import io
+import fs
+
+import self.card as card
+import self.srs as srs
+import self.store as store
+
+effect fn read_question(prompt: String) -> String = {
+  io.print(prompt)
+  string.trim(io.read_line())
+}
+
+// Read until a single empty line. Returns the joined body.
+effect fn read_block(prompt: String) -> String = {
+  io.print(prompt)
+  read_lines_until_blank("")
+}
+
+effect fn read_lines_until_blank(acc: String) -> String = {
+  let line = io.read_line()
+  if line == "" then string.trim(acc)
+  else read_lines_until_blank(acc + line + "\n")
+}
+
+effect fn run(note: String) -> Result[String, String] = {
+  io.print("teichaku add — note: ${note}\n")
+  io.print("\n")
+  let q = read_question("Q: ")
+  if q == "" then err("question cannot be empty")
+  else {
+    io.print("\n")
+    io.print("A (end with a blank line):\n")
+    let a = read_lines_until_blank("")
+    if a == "" then err("answer cannot be empty")
+    else {
+      let id = store.next_card_id(note)!
+      let s = srs.initial()
+      let today = card.today_iso()
+      // First-time due is today (so the user can review immediately).
+      let c = Card {
+        id: id,
+        note: note,
+        question: q,
+        answer: a,
+        ef: s.ef,
+        interval: s.interval,
+        reps: s.reps,
+        due: today,
+        created: today,
+        history: [],
+      }
+      let path = store.save(c)!
+      io.print("\n  saved: ${path}\n")
+      ok(path)
+    }
+  }
+}
