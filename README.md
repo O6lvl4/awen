@@ -14,15 +14,41 @@ It's a CLI re-implementation of the spaced-repetition core in [MemRE](https://gi
 
 ## Install
 
-Requires [Almide](https://github.com/almide/almide).
+### Homebrew (macOS / Linux)
+
+```bash
+brew install O6lvl4/tap/awen
+```
+
+### Pre-built binaries
+
+Each release ships sha256-verified tarballs for `aarch64-apple-darwin`,
+`x86_64-apple-darwin`, and `x86_64-unknown-linux-gnu`. See [Releases](https://github.com/O6lvl4/awen/releases).
+
+```bash
+TAG=v0.0.1
+TARGET=aarch64-apple-darwin     # or x86_64-apple-darwin / x86_64-unknown-linux-gnu
+curl -fsSL "https://github.com/O6lvl4/awen/releases/download/${TAG}/awen-${TAG}-${TARGET}.tar.gz" \
+  | tar -xz
+mv "awen-${TAG}-${TARGET}/awen" ~/.local/bin/awen
+```
+
+### From source
+
+Requires [Almide](https://github.com/almide/almide). Install it once with:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
+```
+
+Then build awen:
 
 ```bash
 git clone https://github.com/O6lvl4/awen
 cd awen
-almide run src/main.almd help
+almide build --release -o awen
+./awen help
 ```
-
-A binary install (`almide build`) will land once `[[bin]]` lands in `almide.toml` upstream.
 
 ## Use
 

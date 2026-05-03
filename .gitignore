@@ -1,5 +1,7 @@
+/awen
 target/
 .almide/
 .almide-cache/
+dist/
 *.tmp
 .DS_Store

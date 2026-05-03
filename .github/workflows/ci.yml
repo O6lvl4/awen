@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: type-check & smoke build
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install Almide
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: type-check
+        run: almide check src/main.almd
+
+      - name: build (release)
+        run: almide build --release -o awen
+
+      - name: smoke test
+        run: |
+          ./awen help
+          ./awen version
+          # stats over an empty vault must succeed:
+          AWEN_VAULT="$(mktemp -d)" ./awen stats
