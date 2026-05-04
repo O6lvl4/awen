@@ -14,16 +14,23 @@ It's a CLI re-implementation of the spaced-repetition core in [MemRE](https://gi
 
 ## Install
 
-### Homebrew (macOS / Linux)
+### `almide install` (recommended)
+
+Requires [Almide](https://github.com/almide/almide) ≥ 0.15.2.
 
 ```bash
-brew install O6lvl4/tap/awen
+# Install Almide once
+curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
+
+# Then install awen
+almide install github.com/O6lvl4/awen
 ```
+
+The binary lands in `~/.local/bin/awen` (override with `--bin-dir`). Same shape as `go install`.
 
 ### Pre-built binaries
 
-Each release ships sha256-verified tarballs for `aarch64-apple-darwin`,
-`x86_64-apple-darwin`, and `x86_64-unknown-linux-gnu`. See [Releases](https://github.com/O6lvl4/awen/releases).
+Each release ships sha256-verified tarballs for `aarch64-apple-darwin`, `x86_64-apple-darwin`, and `x86_64-unknown-linux-gnu`. See [Releases](https://github.com/O6lvl4/awen/releases).
 
 ```bash
 TAG=v0.0.1
@@ -34,14 +41,6 @@ mv "awen-${TAG}-${TARGET}/awen" ~/.local/bin/awen
 ```
 
 ### From source
-
-Requires [Almide](https://github.com/almide/almide). Install it once with:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
-```
-
-Then build awen:
 
 ```bash
 git clone https://github.com/O6lvl4/awen

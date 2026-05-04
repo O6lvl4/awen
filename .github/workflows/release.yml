@@ -92,7 +92,10 @@ jobs:
     name: bump homebrew-tap
     needs: release
     runs-on: ubuntu-latest
-    if: ${{ !github.event.inputs.tag || github.event.inputs.tag != '' }}
+    # Set repository variable PUBLISH_HOMEBREW=true (and the
+    # TAP_DEPLOY_KEY secret) to enable. Skipped on first releases until
+    # the deploy key for O6lvl4/homebrew-tap is wired in.
+    if: ${{ vars.PUBLISH_HOMEBREW == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
