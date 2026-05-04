@@ -3,6 +3,10 @@
 // Walk through every card whose due ≤ today, show the question, prompt
 // for the answer, reveal, take a quality rating (0..5), update the
 // schedule with SM-2, write the card back.
+//
+// TUI uses ANSI escape codes (CSI) directly. Almide has no terminal
+// library, but every modern terminal (iTerm2, Terminal.app, gnome,
+// Windows Terminal) honors the ones we use here.
 
 import io
 import int
@@ -11,37 +15,137 @@ import self.card as card
 import self.srs as srs
 import self.store as store
 
+// ── ANSI escape sequences ──
+
+fn esc() -> String = string.from_codepoint(27)
+
+fn reset() -> String  = "${esc()}[0m"
+fn bold() -> String   = "${esc()}[1m"
+fn dim() -> String    = "${esc()}[2m"
+fn red() -> String    = "${esc()}[31m"
+fn green() -> String  = "${esc()}[32m"
+fn yellow() -> String = "${esc()}[33m"
+fn cyan() -> String   = "${esc()}[36m"
+
+fn clear_screen() -> String = "${esc()}[2J${esc()}[H"
+
+// ── helpers ──
+
+effect fn wait_enter() -> Unit = {
+  let _ = io.read_line()
+  ()
+}
+
 effect fn rate() -> Int = {
-  io.print("Quality 0..5 (0=blackout, 3=correct-with-effort, 5=perfect): ")
+  io.print("\n${dim()}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${reset()}\n")
+  io.print("${bold()}どれくらい思い出せた？${reset()}\n\n")
+  io.print("  ${red()}0${reset()}  blackout         全然わからん\n")
+  io.print("  ${red()}1${reset()}  wrong, familiar  答え見たら分かった\n")
+  io.print("  ${red()}2${reset()}  wrong            知ってたはずなのに\n")
+  io.print("  ${green()}3${reset()}  correct, hard    正解、頑張った\n")
+  io.print("  ${green()}4${reset()}  correct, ok      正解、ちょっと迷った\n")
+  io.print("  ${green()}5${reset()}  perfect          即答、楽勝\n\n")
+  io.print("${bold()}Quality (0-5, s=skip, q=quit):${reset()} ")
   let line = string.trim(io.read_line())
-  match int.parse(line) {
+  if line == "q" or line == "Q" then q_quit()
+  else if line == "s" or line == "S" then q_skip()
+  else match int.parse(line) {
     ok(n) =>
       if n < 0 then 0
       else if n > 5 then 5
       else n
-    err(_) => 0
+    err(_) => q_skip()
   }
 }
 
-effect fn review_one(c: card.Card, today: String) -> Result[Unit, String] = {
-  io.print("─────────────────────────────────────\n")
-  io.print("Note:     ${c.note}\n")
-  io.print("Card:     ${c.id}    reps=${int.to_string(c.reps)}    ef=${float.to_fixed(c.ef, 2)}\n")
-  io.print("\nQ: ${c.question}\n")
-  io.print("\n[Enter] to reveal answer ")
-  let _ = io.read_line()
-  io.print("\nA:\n${c.answer}\n\n")
+// Returns the quality used (-1 = skipped, -2 = quit, 0..5 = rated)
+effect fn review_one(c: card.Card, today: String, idx: Int, total: Int) -> Result[Int, String] = {
+  io.print(clear_screen())
+  io.print("${bold()}${cyan()}awen review${reset()}    ${dim()}Card ${int.to_string(idx)}/${int.to_string(total)}${reset()}\n")
+  io.print("${dim()}═════════════════════════════════════════${reset()}\n\n")
+  io.print("${dim()}Note  ${reset()}${bold()}${c.note}${reset()}\n")
+  io.print("${dim()}Reps  ${reset()}${int.to_string(c.reps)}    ${dim()}EF  ${reset()}${float.to_fixed(c.ef, 2)}    ${dim()}Due  ${reset()}${c.due}\n\n")
+  io.print("${dim()}╭─ Q ───────────────────────────────────╮${reset()}\n")
+  io.print("${bold()}${c.question}${reset()}\n")
+  io.print("${dim()}╰───────────────────────────────────────╯${reset()}\n\n")
+  io.print("${dim()}[ Press Enter to reveal ]${reset()}")
+  wait_enter()
+  io.print("\n${dim()}╭─ A ───────────────────────────────────╮${reset()}\n")
+  io.print("${c.answer}\n")
+  io.print("${dim()}╰───────────────────────────────────────╯${reset()}\n")
+
   let q = rate()
-  let cur_sched = Schedule { ef: c.ef, interval: c.interval, reps: c.reps }
-  let next_sched = srs.apply(cur_sched, q)
-  match card.add_days_iso(today, next_sched.interval) {
-    err(e) => err(e)
-    ok(next_due) => {
-      let r = Review { date: today, quality: q }
-      let updated = card.append_review(card.with_schedule(c, next_sched, next_due), r)
-      let _ = store.save(updated)!
-      io.print("  → next review: ${next_due} (in ${int.to_string(next_sched.interval)} day(s))\n\n")
-      ok(())
+  if q == q_quit() then ok(q_quit())
+  else if q == q_skip() then {
+    io.print("${yellow()}↷ skipped (no rating recorded).${reset()}\n\n")
+    io.print("${dim()}[ press enter for next card ]${reset()}")
+    wait_enter()
+    ok(q_skip())
+  } else {
+    let cur_sched = Schedule { ef: c.ef, interval: c.interval, reps: c.reps }
+    let next_sched = srs.apply(cur_sched, q)
+    match card.add_days_iso(today, next_sched.interval) {
+      err(e) => err(e)
+      ok(next_due) => {
+        let r = Review { date: today, quality: q }
+        let updated = card.append_review(card.with_schedule(c, next_sched, next_due), r)
+        let _ = store.save(updated)!
+        let mark = if q < 3 then "${red()}✗${reset()}" else "${green()}✓${reset()}"
+        io.print("\n${mark} q=${int.to_string(q)}    next ${bold()}${next_due}${reset()} (in ${int.to_string(next_sched.interval)} day(s))    EF ${float.to_fixed(next_sched.ef, 2)}\n\n")
+        io.print("${dim()}[ press enter for next card ]${reset()}")
+        wait_enter()
+        ok(q)
+      }
+    }
+  }
+}
+
+// Sentinel ints used by the rate prompt and the loop. SM-2 quality
+// is 0..5, so any out-of-range positive value is safe.
+//   skip()  = 100  → user pressed `s` or invalid input
+//   quit()  = 101  → user pressed `q`
+//
+// Defined as functions because top-level `let` of Int is currently
+// miscompiled when used in `==` comparisons.
+fn q_skip() -> Int = 100
+fn q_quit() -> Int = 101
+
+effect fn print_err(e: String) -> Int = {
+  io.print("${red()}error: ${e}${reset()}\n")
+  q_skip()
+}
+
+// Recursive review loop. Returns (correct, failed, skipped) counts.
+effect fn loop_review(
+  cards: List[card.Card],
+  today: String,
+  total: Int,
+  idx: Int,
+  correct: Int,
+  failed: Int,
+  skipped: Int,
+) -> (Int, Int, Int) = {
+  if list.is_empty(cards) then (correct, failed, skipped)
+  else match list.first(cards) {
+    none => (correct, failed, skipped)
+    some(c) => {
+      let result = match review_one(c, today, idx, total) {
+        err(e) => print_err(e)
+        ok(q) => q
+      }
+      if result == q_quit() then
+        (correct, failed, skipped + list.len(cards))
+      else {
+        let is_skip = result == q_skip()
+        let nc = if is_skip then correct
+                 else if result >= 3 then correct + 1
+                 else correct
+        let nf = if is_skip then failed
+                 else if result < 3 then failed + 1
+                 else failed
+        let ns = if is_skip then skipped + 1 else skipped
+        loop_review(list.drop(cards, 1), today, total, idx + 1, nc, nf, ns)
+      }
     }
   }
 }
@@ -49,18 +153,19 @@ effect fn review_one(c: card.Card, today: String) -> Result[Unit, String] = {
 effect fn run() -> Result[Unit, String] = {
   let today = card.today_iso()
   let due = store.list_due_cards(today)!
-  if list.is_empty(due) then {
-    io.print("✓ No cards due today.\n")
+  let total = list.len(due)
+  if total == 0 then {
+    io.print("${green()}✓ No cards due today.${reset()}\n")
     ok(())
   } else {
-    io.print("Reviewing ${int.to_string(list.len(due))} card(s)...\n\n")
-    for c in due {
-      match review_one(c, today) {
-        err(e) => io.print("  error: ${e}\n")
-        ok(_) => ()
-      }
-    }
-    io.print("Done.\n")
+    io.print("${bold()}Reviewing ${int.to_string(total)} card(s)...${reset()}\n\n")
+    let counts = loop_review(due, today, total, 1, 0, 0, 0)
+    let (correct, failed, skipped) = counts
+    io.print("${dim()}═════════════════════════════════════════${reset()}\n")
+    io.print("${bold()}Done.${reset()}  ")
+    io.print("${green()}✓ ${int.to_string(correct)}${reset()}  ")
+    io.print("${red()}✗ ${int.to_string(failed)}${reset()}  ")
+    io.print("${yellow()}↷ ${int.to_string(skipped)}${reset()}\n")
     ok(())
   }
 }

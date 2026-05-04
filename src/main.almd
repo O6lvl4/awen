@@ -22,7 +22,7 @@ import self.cmd_stats as cmd_stats
 // env.args() includes the program name as element 0; positional 0
 // is element 1.
 
-let VERSION = "0.0.2"
+let VERSION = "0.0.3"
 
 effect fn print_help() -> Unit = {
   io.print("awen ${VERSION} — knowledge retention CLI\n\n")
