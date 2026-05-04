@@ -109,17 +109,24 @@ fn from_json_string(s: String) -> Result[Card, String] =
   }
 
 // ── Date helpers ──
+//
+// We persist dates as bare YYYY-MM-DD strings (human-readable, single
+// source of truth in the JSON files). Almide's `datetime.parse_iso`
+// requires a full ISO 8601 timestamp with a time component, so each
+// helper pads `T00:00:00Z` inline before calling the stdlib. (Extracting
+// this into a `parse_date` helper trips an Almide codegen bug — keep
+// the suffix concat inline.)
 
 fn today_iso() -> String = datetime.format(datetime.now(), "YYYY-MM-DD")
 
 fn add_days_iso(iso: String, days: Int) -> Result[String, String] =
-  match datetime.parse_iso(iso) {
+  match datetime.parse_iso(iso + "T00:00:00Z") {
     err(e) => err(e)
     ok(ts) => ok(datetime.format(datetime.add_days(ts, days), "YYYY-MM-DD"))
   }
 
 fn is_due(c: Card, today: String) -> Bool =
-  match (datetime.parse_iso(c.due), datetime.parse_iso(today)) {
+  match (datetime.parse_iso(c.due + "T00:00:00Z"), datetime.parse_iso(today + "T00:00:00Z")) {
     (ok(d), ok(t)) => d <= t
     _ => false
   }
