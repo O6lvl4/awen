@@ -47,14 +47,14 @@ effect fn rate() -> Int = {
   io.print("  ${green()}5${reset()}  perfect          即答、楽勝\n\n")
   io.print("${bold()}Quality (0-5, s=skip, q=quit):${reset()} ")
   let line = string.trim(io.read_line())
-  if line == "q" or line == "Q" then q_quit()
-  else if line == "s" or line == "S" then q_skip()
+  if line == "q" or line == "Q" then Q_QUIT
+  else if line == "s" or line == "S" then Q_SKIP
   else match int.parse(line) {
     ok(n) =>
       if n < 0 then 0
       else if n > 5 then 5
       else n
-    err(_) => q_skip()
+    err(_) => Q_SKIP
   }
 }
 
@@ -71,12 +71,12 @@ effect fn review_one(c: card.Card, today: String, idx: Int, total: Int) -> Resul
   io.print("\n${dim()}A${reset()}  ${c.answer}\n")
 
   let q = rate()
-  if q == q_quit() then ok(q_quit())
-  else if q == q_skip() then {
+  if q == Q_QUIT then ok(Q_QUIT)
+  else if q == Q_SKIP then {
     io.print("${yellow()}↷ skipped (no rating recorded).${reset()}\n\n")
     io.print("${dim()}[ press enter for next card ]${reset()}")
     wait_enter()
-    ok(q_skip())
+    ok(Q_SKIP)
   } else {
     let cur_sched = Schedule { ef: c.ef, interval: c.interval, reps: c.reps }
     let next_sched = srs.apply(cur_sched, q)
@@ -97,18 +97,15 @@ effect fn review_one(c: card.Card, today: String, idx: Int, total: Int) -> Resul
 }
 
 // Sentinel ints used by the rate prompt and the loop. SM-2 quality
-// is 0..5, so any out-of-range positive value is safe.
-//   skip()  = 100  → user pressed `s` or invalid input
-//   quit()  = 101  → user pressed `q`
-//
-// Defined as functions because top-level `let` of Int is currently
-// miscompiled when used in `==` comparisons.
-fn q_skip() -> Int = 100
-fn q_quit() -> Int = 101
+// is 0..5, so negative values are unambiguous as control codes.
+//   Q_SKIP = -1  → user pressed `s` or gave invalid input
+//   Q_QUIT = -2  → user pressed `q`
+let Q_SKIP: Int = -1
+let Q_QUIT: Int = -2
 
 effect fn print_err(e: String) -> Int = {
   io.print("${red()}error: ${e}${reset()}\n")
-  q_skip()
+  Q_SKIP
 }
 
 // Recursive review loop. Returns (correct, failed, skipped) counts.
@@ -129,10 +126,10 @@ effect fn loop_review(
         err(e) => print_err(e)
         ok(q) => q
       }
-      if result == q_quit() then
+      if result == Q_QUIT then
         (correct, failed, skipped + list.len(cards))
       else {
-        let is_skip = result == q_skip()
+        let is_skip = result == Q_SKIP
         let nc = if is_skip then correct
                  else if result >= 3 then correct + 1
                  else correct
