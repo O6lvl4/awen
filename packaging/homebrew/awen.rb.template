@@ -9,10 +9,8 @@ class Awen < Formula
       url "https://github.com/O6lvl4/awen/releases/download/v{{VERSION}}/awen-v{{VERSION}}-aarch64-apple-darwin.tar.gz"
       sha256 "{{SHA_DARWIN_ARM64}}"
     end
-    on_intel do
-      url "https://github.com/O6lvl4/awen/releases/download/v{{VERSION}}/awen-v{{VERSION}}-x86_64-apple-darwin.tar.gz"
-      sha256 "{{SHA_DARWIN_X86_64}}"
-    end
+    # x86_64-apple-darwin builds will return once the release pipeline
+    # has a stable Intel runner. Apple-Silicon Macs covered by `on_arm`.
   end
 
   on_linux do

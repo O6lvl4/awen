@@ -21,10 +21,14 @@ jobs:
         include:
           - target: aarch64-apple-darwin
             runner: macos-14
-          - target: x86_64-apple-darwin
-            runner: macos-13
           - target: x86_64-unknown-linux-gnu
             runner: ubuntu-latest
+        # x86_64-apple-darwin (macos-13) is omitted from the v0.0.x
+        # series — that runner is being deprecated by GitHub and was
+        # stuck in the queue for >10 minutes on the v0.0.1 attempt.
+        # Re-add once Almide supports `almide build --target` for
+        # cross-compile on macos-14 hosts, or once a stable Intel
+        # runner returns.
 
     steps:
       - uses: actions/checkout@v4
@@ -115,16 +119,14 @@ jobs:
             awk -v f="awen-v${VERSION}-$1.tar.gz" '$2 == f { print $1 }' dist/SHA256SUMS
           }
           SHA_DARWIN_ARM64=$(sha_for aarch64-apple-darwin)
-          SHA_DARWIN_X86_64=$(sha_for x86_64-apple-darwin)
           SHA_LINUX_X86_64=$(sha_for x86_64-unknown-linux-gnu)
-          for s in "$SHA_DARWIN_ARM64" "$SHA_DARWIN_X86_64" "$SHA_LINUX_X86_64"; do
+          for s in "$SHA_DARWIN_ARM64" "$SHA_LINUX_X86_64"; do
             [ -n "$s" ] || { echo "missing sha for one or more targets" >&2; exit 1; }
           done
           mkdir -p out/Formula
           sed \
             -e "s|{{VERSION}}|${VERSION}|g" \
             -e "s|{{SHA_DARWIN_ARM64}}|${SHA_DARWIN_ARM64}|g" \
-            -e "s|{{SHA_DARWIN_X86_64}}|${SHA_DARWIN_X86_64}|g" \
             -e "s|{{SHA_LINUX_X86_64}}|${SHA_LINUX_X86_64}|g" \
             packaging/homebrew/awen.rb.template > out/Formula/awen.rb
           cat out/Formula/awen.rb
