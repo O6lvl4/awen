@@ -14,7 +14,7 @@ fn avg_ef(cards: List[card.Card]) -> Float = {
   if n == 0 then 0.0
   else {
     let total = list.fold(cards, 0.0, (acc, c) => acc + c.ef)
-    total / int.to_float(n)
+    total / float.from(n)
   }
 }
 

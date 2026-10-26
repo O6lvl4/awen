@@ -13,7 +13,7 @@ import self.store as store
 
 effect fn read_question(prompt: String) -> String = {
   io.print(prompt)
-  string.trim(io.read_line())
+  string.trim(io.read_line() ?? "")
 }
 
 // Read until a single empty line. Returns the joined body.
@@ -23,7 +23,7 @@ effect fn read_block(prompt: String) -> String = {
 }
 
 effect fn read_lines_until_blank(acc: String) -> String = {
-  let line = io.read_line()
+  let line = io.read_line() ?? ""
   if line == "" then string.trim(acc)
   else read_lines_until_blank(acc + line + "\n")
 }

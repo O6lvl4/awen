@@ -32,7 +32,7 @@ effect fn ensure_note_dir(note: String) -> Result[Unit, String] = {
 effect fn save(c: card.Card) -> Result[String, String] = {
   ensure_note_dir(c.note)!
   let path = card_path(c)
-  match fs.write(path, card.to_json_string(c)) {
+  match fs.write_text(path, card.to_json_string(c)) {
     err(e) => err("write ${path}: ${e}")
     ok(_) => ok(path)
   }

@@ -17,7 +17,7 @@ import self.store as store
 
 // ── ANSI escape sequences ──
 
-fn esc() -> String = string.from_codepoint(27)
+fn esc() -> String = string.from_codepoint(27) ?? ""
 
 fn reset() -> String  = "${esc()}[0m"
 fn bold() -> String   = "${esc()}[1m"
@@ -46,7 +46,7 @@ effect fn rate() -> Int = {
   io.print("  ${green()}4${reset()}  correct, ok      正解、ちょっと迷った\n")
   io.print("  ${green()}5${reset()}  perfect          即答、楽勝\n\n")
   io.print("${bold()}Quality (0-5, s=skip, q=quit):${reset()} ")
-  let line = string.trim(io.read_line())
+  let line = string.trim(io.read_line() ?? "")
   if line == "q" or line == "Q" then Q_QUIT
   else if line == "s" or line == "S" then Q_SKIP
   else match int.parse(line) {

@@ -21,7 +21,7 @@ fn initial() -> Schedule =
 //   q < 3  → forget. reps = 0, interval = 1, ef adjusted down.
 //   q >= 3 → recall. reps += 1, interval grows (1 → 6 → prev * ef).
 fn apply(s: Schedule, q: Int) -> Schedule = {
-  let qf = int.to_float(q)
+  let qf = float.from(q)
   let delta = 0.1 - (5.0 - qf) * (0.08 + (5.0 - qf) * 0.02)
   let raw_ef = s.ef + delta
   let next_ef = if raw_ef < MIN_EF then MIN_EF else raw_ef
@@ -32,7 +32,7 @@ fn apply(s: Schedule, q: Int) -> Schedule = {
     let next_interval =
       if next_reps == 1 then 1
       else if next_reps == 2 then 6
-      else float.to_int(float.round(int.to_float(s.interval) * next_ef))
+      else int.from_saturating(float.round(float.from(s.interval) * next_ef))
     Schedule { ef: next_ef, interval: next_interval, reps: next_reps }
   }
 }
