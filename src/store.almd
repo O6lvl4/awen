@@ -15,14 +15,14 @@ effect fn vault_path() -> String =
     none => "./vault"
   }
 
-effect fn srs_root() -> String = "${vault_path()}/.srs"
+effect fn srs_root() -> String = "${vault_path()!}/.srs"
 
-effect fn note_dir(note: String) -> String = "${srs_root()}/${note}"
+effect fn note_dir(note: String) -> String = "${srs_root()!}/${note}"
 
-effect fn card_path(c: card.Card) -> String = "${note_dir(c.note)}/${c.id}.json"
+effect fn card_path(c: card.Card) -> String = "${note_dir(c.note)!}/${c.id}.json"
 
 effect fn ensure_note_dir(note: String) -> Result[Unit, String] = {
-  let dir = note_dir(note)
+  let dir = note_dir(note)!
   match fs.mkdir_p(dir) {
     err(e) => err("mkdir ${dir}: ${e}")
     ok(_) => ok(())
@@ -31,7 +31,7 @@ effect fn ensure_note_dir(note: String) -> Result[Unit, String] = {
 
 effect fn save(c: card.Card) -> Result[String, String] = {
   ensure_note_dir(c.note)!
-  let path = card_path(c)
+  let path = card_path(c)!
   match fs.write_text(path, card.to_json_string(c)) {
     err(e) => err("write ${path}: ${e}")
     ok(_) => ok(path)
@@ -47,7 +47,7 @@ effect fn load_path(path: String) -> Result[card.Card, String] =
 // Generate the next card id under a note. Counts existing files
 // and uses N+1 zero-padded to 3 digits ("note-001").
 effect fn next_card_id(note: String) -> Result[String, String] = {
-  let dir = note_dir(note)
+  let dir = note_dir(note)!
   if not fs.is_dir(dir) then ok("${note}-001")
   else match fs.list_dir(dir) {
     err(e) => err("list ${dir}: ${e}")
@@ -62,7 +62,7 @@ effect fn next_card_id(note: String) -> Result[String, String] = {
 }
 
 effect fn list_notes() -> Result[List[String], String] = {
-  let root = srs_root()
+  let root = srs_root()!
   if not fs.is_dir(root) then ok([])
   else fs.list_dir(root)
 }
@@ -70,7 +70,7 @@ effect fn list_notes() -> Result[List[String], String] = {
 // Load all cards under one note. Bad files are skipped silently;
 // the caller can re-run with verbose logging if anything is missing.
 effect fn list_cards_for_note(note: String) -> Result[List[card.Card], String] = {
-  let dir = note_dir(note)
+  let dir = note_dir(note)!
   if not fs.is_dir(dir) then ok([])
   else match fs.list_dir(dir) {
     err(e) => err("list ${dir}: ${e}")
@@ -87,15 +87,8 @@ effect fn list_cards_for_note(note: String) -> Result[List[card.Card], String] =
 
 effect fn list_all_cards() -> Result[List[card.Card], String] = {
   let notes = list_notes()!
-  let acc = list.fold(notes, ok([]), (r, n) =>
-    match r {
-      err(e) => err(e)
-      ok(cs) => match list_cards_for_note(n) {
-        err(e) => err(e)
-        ok(more) => ok(cs + more)
-      }
-    })
-  acc
+  let per_note = notes |> list.map((n) => list_cards_for_note(n)!)!
+  ok(list.flatten(per_note))
 }
 
 effect fn list_due_cards(today: String) -> Result[List[card.Card], String] = {

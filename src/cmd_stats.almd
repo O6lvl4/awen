@@ -22,7 +22,7 @@ fn count_due(cards: List[card.Card], today: String) -> Int =
   list.count(cards, (c) => card.is_due(c, today))
 
 effect fn run(filter: Option[String]) -> Result[Unit, String] = {
-  let today = card.today_iso()
+  let today = card.today_iso()!
   let all = store.list_all_cards()!
   let cards = match filter {
     some(n) => list.filter(all, (c) => c.note == n)

@@ -49,9 +49,9 @@ effect fn run() -> Result[Unit, String] = {
     }
     "review" => cmd_review.run()
     "stats" => cmd_stats.run(arg1)
-    "help" => { print_help(); ok(()) }
-    "-h" => { print_help(); ok(()) }
-    "--help" => { print_help(); ok(()) }
+    "help" => { print_help()!; ok(()) }
+    "-h" => { print_help()!; ok(()) }
+    "--help" => { print_help()!; ok(()) }
     "version" => { io.print("awen ${VERSION}\n"); ok(()) }
     "--version" => { io.print("awen ${VERSION}\n"); ok(()) }
     _ => err("unknown command: ${cmd}. Try 'awen help'.")

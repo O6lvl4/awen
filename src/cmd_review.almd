@@ -67,15 +67,15 @@ effect fn review_one(c: card.Card, today: String, idx: Int, total: Int) -> Resul
   io.print("${dim()}Reps  ${reset()}${int.to_string(c.reps)}    ${dim()}EF  ${reset()}${float.to_fixed(c.ef, 2)}    ${dim()}Due  ${reset()}${c.due}\n\n")
   io.print("${dim()}Q${reset()}  ${bold()}${c.question}${reset()}\n\n")
   io.print("${dim()}[ Press Enter to reveal ]${reset()}")
-  wait_enter()
+  wait_enter()!
   io.print("\n${dim()}A${reset()}  ${c.answer}\n")
 
-  let q = rate()
+  let q = rate()!
   if q == Q_QUIT then ok(Q_QUIT)
   else if q == Q_SKIP then {
     io.print("${yellow()}↷ skipped (no rating recorded).${reset()}\n\n")
     io.print("${dim()}[ press enter for next card ]${reset()}")
-    wait_enter()
+    wait_enter()!
     ok(Q_SKIP)
   } else {
     let cur_sched = Schedule { ef: c.ef, interval: c.interval, reps: c.reps }
@@ -89,7 +89,7 @@ effect fn review_one(c: card.Card, today: String, idx: Int, total: Int) -> Resul
         let mark = if q < 3 then "${red()}✗${reset()}" else "${green()}✓${reset()}"
         io.print("\n${mark} q=${int.to_string(q)}    next ${bold()}${next_due}${reset()} (in ${int.to_string(next_sched.interval)} day(s))    EF ${float.to_fixed(next_sched.ef, 2)}\n\n")
         io.print("${dim()}[ press enter for next card ]${reset()}")
-        wait_enter()
+        wait_enter()!
         ok(q)
       }
     }
@@ -123,7 +123,7 @@ effect fn loop_review(
     none => (correct, failed, skipped)
     some(c) => {
       let result = match review_one(c, today, idx, total) {
-        err(e) => print_err(e)
+        err(e) => print_err(e)!
         ok(q) => q
       }
       if result == Q_QUIT then
@@ -137,14 +137,14 @@ effect fn loop_review(
                  else if result < 3 then failed + 1
                  else failed
         let ns = if is_skip then skipped + 1 else skipped
-        loop_review(list.drop(cards, 1), today, total, idx + 1, nc, nf, ns)
+        loop_review(list.drop(cards, 1), today, total, idx + 1, nc, nf, ns)!
       }
     }
   }
 }
 
 effect fn run() -> Result[Unit, String] = {
-  let today = card.today_iso()
+  let today = card.today_iso()!
   let due = store.list_due_cards(today)!
   let total = list.len(due)
   if total == 0 then {
@@ -152,7 +152,7 @@ effect fn run() -> Result[Unit, String] = {
     ok(())
   } else {
     io.print("${bold()}Reviewing ${int.to_string(total)} card(s)...${reset()}\n\n")
-    let counts = loop_review(due, today, total, 1, 0, 0, 0)
+    let counts = loop_review(due, today, total, 1, 0, 0, 0)!
     let (correct, failed, skipped) = counts
     io.print("${dim()}═════════════════════════════════════════${reset()}\n")
     io.print("${bold()}Done.${reset()}  ")
