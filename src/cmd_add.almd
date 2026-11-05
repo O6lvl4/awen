@@ -13,35 +13,35 @@ import self.store as store
 
 effect fn read_question(prompt: String) -> String = {
   io.print(prompt)
-  string.trim(io.read_line())
+  string.trim(io.read_line() ?? "")
 }
 
 // Read until a single empty line. Returns the joined body.
 effect fn read_block(prompt: String) -> String = {
   io.print(prompt)
-  read_lines_until_blank("")
+  read_lines_until_blank("")!
 }
 
 effect fn read_lines_until_blank(acc: String) -> String = {
-  let line = io.read_line()
+  let line = io.read_line() ?? ""
   if line == "" then string.trim(acc)
-  else read_lines_until_blank(acc + line + "\n")
+  else read_lines_until_blank(acc + line + "\n")!
 }
 
 effect fn run(note: String) -> Result[String, String] = {
   io.print("awen add — note: ${note}\n")
   io.print("\n")
-  let q = read_question("Q: ")
+  let q = read_question("Q: ")!
   if q == "" then err("question cannot be empty")
   else {
     io.print("\n")
     io.print("A (end with a blank line):\n")
-    let a = read_lines_until_blank("")
+    let a = read_lines_until_blank("")!
     if a == "" then err("answer cannot be empty")
     else {
       let id = store.next_card_id(note)!
       let s = srs.initial()
-      let today = card.today_iso()
+      let today = card.today_iso()!
       // First-time due is today (so the user can review immediately).
       let c = Card {
         id: id,
